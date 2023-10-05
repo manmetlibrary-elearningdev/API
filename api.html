@@ -1,0 +1,116 @@
+<script>
+    // Define an object named SCORM to encapsulate SCORM API interactions
+    var SCORM = {
+        apiHandle: null,
+
+        // Function to recursively find the SCORM API in the window hierarchy
+        findAPI: function (win) {
+            while ((win.API == null) && (win.parent != null) && (win.parent != win)) {
+                win = win.parent;
+            }
+            return win.API;
+        },
+
+        // Function to get the SCORM API handle
+        getAPI: function () {
+            if (this.apiHandle == null) {
+                this.apiHandle = this.findAPI(window);
+            }
+            return this.apiHandle;
+        },
+
+        // Function to initialize the SCORM communication
+        initialize: function () {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSInitialize("");
+            }
+            return false;
+        },
+
+        // Function to terminate the SCORM communication
+        terminate: function () {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSFinish("");
+            }
+            return false;
+        },
+
+        // Function to set a value in the SCORM data model
+        setValue: function (key, value) {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSSetValue(key, value);
+            }
+            return false;
+        },
+
+        // Function to retrieve a value from the SCORM data model
+        getValue: function (key) {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSGetValue(key);
+            }
+            return "";
+        },
+
+        // Function to save changes to the SCORM data model
+        commit: function () {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSCommit("");
+            }
+            return false;
+        },
+
+        // Function to get the last SCORM error code
+        getLastError: function () {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSGetLastError();
+            }
+            return -1;
+        },
+
+        // Function to get the error string associated with a specific error code
+        getErrorString: function (errorCode) {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSGetErrorString(errorCode);
+            }
+            return "";
+        },
+
+        // Function to get diagnostic information for a specific error code
+        getDiagnostic: function (errorCode) {
+            var api = this.getAPI();
+            if (api) {
+                return api.LMSGetDiagnostic(errorCode);
+            }
+            return "";
+        }
+    };
+
+    // Function to report completion to the SCORM API
+    function reportCompletionToLMS() {
+        if (SCORM.initialize()) {
+            // Set completion status and user score in the SCORM data model
+            SCORM.setValue("cmi.core.lesson_status", "completed");
+            SCORM.setValue("cmi.core.score.raw", userScore);
+            SCORM.setValue("cmi.core.score.min", "0");
+            SCORM.setValue("cmi.core.score.max", "100");
+
+            // Commit and terminate the SCORM communication
+            SCORM.commit();
+            SCORM.terminate();
+        } else {
+            // Handle initialization failure and log SCORM errors
+            console.error("Failed to initialize SCORM API");
+            var errorCode = SCORM.getLastError();
+            console.error("SCORM Error Code:", errorCode);
+            console.error("SCORM Error:", SCORM.getErrorString(errorCode));
+            console.error("SCORM Diagnostic:", SCORM.getDiagnostic(errorCode));
+        }
+    }
+</script>
